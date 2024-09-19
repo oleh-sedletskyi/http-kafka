@@ -3,7 +3,6 @@
             [http+kafka.kafka :as kafka]))
 
 (def filters (atom {}))
-(def update-filters? (atom false))
 
 (def topics (atom {}))
 (def messages (atom ()))
@@ -30,7 +29,6 @@
                  0
                  (->> @filters keys sort last inc))]
         (swap! filters assoc id (assoc f :id id))
-        (reset! update-filters? true)
         (subscribe-to-topic (:topic f))))))
 
 (defn clean-messages [topic]
@@ -48,7 +46,6 @@
   (let [f (get @filters id)]
     (when f
       (swap! filters dissoc (:id f))
-      (reset! update-filters? true)
       (clean-topics (:topic f)))))
 
 (defn get-messages [id]
@@ -60,13 +57,11 @@
 
 (comment
   (add-filter {:topic "books"
-                 :q "sicp"}
+               :q "sicp"}
               #_{:topic "books"
                  :q "python"}
               #_{:topic "movies"
-               :q "mart"})
-
-  (delete-filter 0)
+                 :q "mart"})
 
   (get-messages 1)
 
@@ -75,7 +70,9 @@
   @topics
   @consumers
 
-  @update-filters?
+  (clean-topics "books")
+  (delete-filter 0)
+  (reset! consumers {})
 
   ;;
   )

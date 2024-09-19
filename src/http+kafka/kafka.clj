@@ -1,5 +1,6 @@
 (ns http+kafka.kafka
-  (:require [http+kafka.state :as state]
+  (:require [clojure.string :as str]
+            [http+kafka.state :as state]
             [http+kafka.utils :as utils]
             [jackdaw.client :as jc]
             [jackdaw.serdes :refer [string-serde edn-serde]]
@@ -70,9 +71,10 @@
     (start-consumer! consumer topic processing-fn)))
 
 (defn process-records [topic records]
-  (let [msg (->> records (map :value) str)
+  (let [msg (->> records (map :value) (str/join " "))
         patterns (->> @state/filters
                       vals
+                      (filter #(= topic (:topic %)))
                       (map :q))]
     (info "Message:" msg)
     (when (utils/match-by-patterns msg patterns)
