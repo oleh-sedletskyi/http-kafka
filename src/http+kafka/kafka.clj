@@ -7,7 +7,7 @@
             [taoensso.timbre :refer [info]])
   (:import [org.apache.kafka.common.errors WakeupException]))
 
-(def kafka-config {"bootstrap.servers" "localhost:58686"})
+(def kafka-config {"bootstrap.servers" "localhost:57750"})
 
 (defn consumer-config [topic]
   (merge kafka-config
@@ -36,7 +36,7 @@
 (defn stop-and-close-consumer!
   "Stops the consumer polling loop and closes the consumer."
   [consumer]
-  (state/set-consumer-status consumer false)
+  (state/set-consumer-status! consumer false)
   (.close consumer)
   (swap! state/consumers dissoc consumer)
   (info "Closed Kafka Consumer"))
@@ -56,7 +56,7 @@
   (.addShutdownHook (Runtime/getRuntime)
                     (Thread. (fn []
                                (info "Stopping Kafka Consumer...")
-                               (state/set-consumer-status consumer false)
+                               (state/set-consumer-status! consumer false)
                                (.wakeup consumer)))))
 
 (defn process-messages!
@@ -66,7 +66,7 @@
         consumer-config (consumer-config topic)
         consumer        (jc/subscribed-consumer consumer-config [topic-config])]
     (swap! state/topics assoc topic consumer)
-    (state/set-consumer-status consumer true)
+    (state/set-consumer-status! consumer true)
     (add-shutdown-hook-consumer! consumer)
     (start-consumer! consumer topic processing-fn)))
 
