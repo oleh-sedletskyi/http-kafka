@@ -56,12 +56,8 @@
   @state/messages
   @state/topics
   @state/consumers
-  ;; TODO: Extend API
-  ;; TODO: Setup Docker with docker-compose
 
-  (clean-topics! "books")
   (delete-filter! 1)
-  (reset! state/consumers {})
 
   ;;
   )
