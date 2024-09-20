@@ -1,4 +1,4 @@
-(ns http+kafka.state-test
+(ns http+kafka.handlers-test
   (:require [http+kafka.state :as state]
             [http+kafka.handlers :as sut]
             [clojure.test :refer [deftest testing is]]))
