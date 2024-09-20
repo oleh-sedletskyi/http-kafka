@@ -4,7 +4,7 @@
                  [fundingcircle/jackdaw "0.7.8"]
                  [pjstadig/humane-test-output "0.11.0"]
                  [com.taoensso/timbre "6.6.0-RC1"]]
-  :ring {:handler http+kafka.core/app}
+  :ring {:handler http+kafka.routes/app}
   :profiles {:dev
              {:plugins [[lein-ring "0.12.6"]]}}
-  :repl-options {:init-ns http+kafka.core})
+  :repl-options {:init-ns http+kafka.routes})

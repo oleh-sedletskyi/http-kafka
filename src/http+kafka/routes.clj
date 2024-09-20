@@ -1,4 +1,4 @@
-(ns http+kafka.core
+(ns http+kafka.routes
   (:require
    [compojure.api.sweet :as api]
    ;; [ring.util.http-response :refer :all]
