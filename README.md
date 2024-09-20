@@ -4,11 +4,11 @@ A Clojure service for filtering messages from Kafka.
 
 ## Usage
 
-Start Kafka container and service using the following command:
+Start the Kafka container and the service using the following command:
 
 `docker-compose up -d && lein ring server`
 
-(this should automatically open swagger page `http://localhost:3000/index.html` where you can add/delete/retrieve filters and get its messages)
+(this should automatically open the Swagger page `http://localhost:3000/index.html` where you can add/delete/retrieve filters and get its messages.)
 
 You can create a new topic using the following command (here `books`):
 
