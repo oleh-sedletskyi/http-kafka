@@ -1,73 +1,67 @@
 (ns http+kafka.handlers
-  (:require [http+kafka.state :refer [topics filters messages consumers]]
-            [http+kafka.kafka :refer [start-consumer-thread!]]
+  (:require [http+kafka.kafka :as kafka]
+            [http+kafka.state :as state]
             [http+kafka.utils :as utils]))
 
 (defn subscribe-to-topic! [topic]
-  (when-not (get @topics topic)
-    (start-consumer-thread! topic)))
+  (when-not (state/get-consumer-by-topic topic)
+    (kafka/start-consumer-thread! topic)))
 
 (defn add-filter! [f]
-  (let [elem (->> @filters
-                  vals
-                  (filter #(and (= (:topic f) (:topic %))
-                                (= (:q f) (:q %))))
-                  first)]
-    (when (nil? elem)
-      (swap! filters (fn [fs]
-                       ;; Generate id inside swap! to avoid race condition
-                       (let [id (if (= fs {})
-                                  0
-                                  (->> fs keys sort last inc))]
-                         (assoc fs id (assoc f :id id)))))
+  (let [exists? (state/filter-exists? f)]
+    (when-not exists?
+      (state/add-to-filters! f)
       (subscribe-to-topic! (:topic f)))))
 
-(defn clean-messages! [topic]
-  (swap! messages #(remove (fn [m] (= (:topic m) topic)) %)))
-
 (defn clean-topics! [topic]
-  (let [remaining-topics (->> @filters vals (map :topic))]
+  (let [remaining-topics (state/get-topics)]
     (when-not (utils/in? remaining-topics topic)
-      (let [consumer (get @topics topic)]
-        (swap! topics dissoc topic)
-        (swap! consumers dissoc consumer))
-      (clean-messages! topic))))
+      (let [consumer (state/get-consumer-by-topic topic)]
+        (state/drop-topic! topic)
+        (state/drop-consumer! consumer))
+      (state/remove-messages-by-topic! topic))))
 
 (defn delete-filter! [id]
-  (let [f (get @filters id)]
+  (let [f (state/get-filter id)]
     (when f
-      (swap! filters dissoc (:id f))
+      (state/drop-filter! id)
       (clean-topics! (:topic f)))))
 
-(defn get-messages [id]
-  (let [{:keys [topic q]} (get @filters id)]
-    (->> @messages
+(defn get-messages [filter-id]
+  (let [{:keys [topic q]} (state/get-filter filter-id)]
+    (->> (state/get-messages)
          (filter #(and (= topic (:topic %))
                        (utils/match-by-patterns (:msg %) [q])))
          (map :msg))))
 
 (defn get-filters []
-  (->> @filters
-       vals))
+  (state/get-filters))
+
+(defn get-filter [id]
+  (state/get-filter id))
 
 (comment
-  (add-filter! {:topic "books"
+  (add-filter! #_{:topic "books"
                   :q "sicp"}
                #_{:topic "books"
-                :q "python"}
-               #_{:topic "movies"
-                  :q "mart"})
+                  :q "python"}
+               {:topic "movies"
+                :q "mar"})
 
   (get-messages 1)
   (get-filters)
-  @filters
-  @messages
-  @topics
-  @consumers
+  (get-filter 1)
+
+  @state/filters
+  @state/messages
+  @state/topics
+  @state/consumers
+  ;; TODO: Extend API
+  ;; TODO: Setup Docker with docker-compose
 
   (clean-topics! "books")
-  (delete-filter! 0)
-  (reset! consumers {})
+  (delete-filter! 1)
+  (reset! state/consumers {})
 
   ;;
   )

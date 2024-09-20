@@ -1,12 +1,14 @@
 (ns http+kafka.state-test
   (:require [http+kafka.state :as state]
             [http+kafka.handlers :as sut]
-            [http+kafka.kafka :as kafka]
             [clojure.test :refer [deftest testing is]]))
 
 (deftest add-filter-test
   (with-redefs [state/filters (atom {})
-                kafka/start-consumer-thread! identity]
+                state/topics (atom {})
+                state/consumers (atom {})
+                state/messages (atom ())
+                sut/subscribe-to-topic! identity]
     (testing "Add new filter"
       (sut/add-filter! {:topic "books"
                        :q     "sicp"})
@@ -31,20 +33,32 @@
 
 (deftest delete-filter-test
   (with-redefs [state/filters (atom {})
-                state/topics (atom {})]
-    (testing "delete existing filter"
+                state/topics (atom {})
+                state/consumers (atom {})
+                state/messages (atom ())
+                sut/subscribe-to-topic! identity]
+    (testing "Delete existing filter. Check messages of certain topic are deleted as well"
       (sut/add-filter! {:topic "books"
-                       :q     "sicp"})
-      (sut/add-filter! {:topic "books"
-                       :q     "python"})
+                        :q     "sicp"})
+      (sut/add-filter! {:topic "movies"
+                        :q     "mar"})
+      (reset! state/messages '({:topic "movies"
+                                :msg "Martian"}
+                               {:topic "books"
+                                :msg "SICP"}))
       (sut/delete-filter! 0)
       (is (= {1 {:id    1
-                 :topic "books"
-                 :q     "python"}} @state/filters)))))
+                 :topic "movies"
+                 :q     "mar"}} @state/filters))
+      (is (= '({:topic "movies"
+                :msg "Martian"}) @state/messages)))))
 
 (deftest delete-non-existing-filter-test
   (with-redefs [state/filters (atom {})
-                state/topics (atom {})]
+                state/topics (atom {})
+                state/consumers (atom {})
+                state/messages (atom ())
+                sut/subscribe-to-topic! identity]
     (testing "delete non-existing filter"
       (sut/add-filter! {:topic "books"
                        :q     "sicp"})
