@@ -7,7 +7,12 @@
             [taoensso.timbre :refer [info]])
   (:import [org.apache.kafka.common.errors WakeupException]))
 
-(def kafka-config {"bootstrap.servers" "localhost:57750"})
+(defn read-kafka-config []
+  (-> (utils/load-edn "resources/config.edn")
+      :kafka))
+
+(defonce kafka-config {"bootstrap.servers" (:server (read-kafka-config))
+                       "group.id" (:group-id (read-kafka-config))})
 
 (defn consumer-config [topic]
   (merge kafka-config
