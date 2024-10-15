@@ -7,11 +7,15 @@
   (when-not (state/get-consumer-by-topic topic)
     (kafka/start-consumer-thread! topic)))
 
+#_(defn add-filter! [f]
+    (let [exists? (state/filter-exists? f)]
+      (when-not exists?
+        (state/add-to-filters! f)
+        (subscribe-to-topic! (:topic f)))))
+
 (defn add-filter! [f]
-  (let [exists? (state/filter-exists? f)]
-    (when-not exists?
-      (state/add-to-filters! f)
-      (subscribe-to-topic! (:topic f)))))
+  (state/add-to-filters! f)
+  (subscribe-to-topic! (:topic f)))
 
 (defn clean-topics! [topic]
   (let [remaining-topics (state/get-topics)]
@@ -43,10 +47,10 @@
 (comment
   (add-filter! #_{:topic "books"
                   :q "sicp"}
-               #_{:topic "books"
-                  :q "python"}
-               {:topic "movies"
-                :q "mar"})
+   #_{:topic "books"
+      :q "python"}
+   {:topic "movies"
+    :q "mar"})
 
   (get-messages 1)
   (get-filters)

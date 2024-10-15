@@ -40,16 +40,40 @@
        first
        boolean))
 
+#_(defn add-to-filters! [f]
+    (swap! filters (fn [fs]
+
+                   ;; Generate id inside swap! to avoid race condition
+                     (let [id (if (= fs {})
+                                0
+                                (->> fs keys sort last inc))]
+                       (assoc fs id (assoc f :id id))))))
+
 (defn add-to-filters! [f]
   (swap! filters (fn [fs]
-                   ;; Generate id inside swap! to avoid race condition
-                   (let [id (if (= fs {})
-                              0
-                              (->> fs keys sort last inc))]
-                     (assoc fs id (assoc f :id id))))))
+                   (let [exists? (->> (vals fs)
+                                      (filter #(and (= (:topic f) (:topic %))
+                                                    (= (:q f) (:q %))))
+                                      first
+                                      boolean)]
+                     (if exists?
+                       fs
+                       ;; Generate id inside swap! to avoid race condition
+                       (let [id (if (= fs {})
+                                  0
+                                  (->> fs keys sort last inc))]
+                         (assoc fs id (assoc f :id id))))))))
 
 (defn get-messages []
   @messages)
 
 (defn remove-messages-by-topic! [topic]
   (swap! messages #(remove (fn [m] (= (:topic m) topic)) %)))
+
+#_(comment
+    (add-to-filters! {:topic "top2"
+                      :q "q"})
+    (reset! filters {})
+    @filters
+  ;
+    )
