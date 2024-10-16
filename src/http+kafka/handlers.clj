@@ -7,12 +7,6 @@
   (when-not (state/get-consumer-by-topic topic)
     (kafka/start-consumer-thread! topic)))
 
-#_(defn add-filter! [f]
-    (let [exists? (state/filter-exists? f)]
-      (when-not exists?
-        (state/add-to-filters! f)
-        (subscribe-to-topic! (:topic f)))))
-
 (defn add-filter! [f]
   (state/add-to-filters! f)
   (subscribe-to-topic! (:topic f)))

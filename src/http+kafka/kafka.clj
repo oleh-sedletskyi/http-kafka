@@ -43,7 +43,7 @@
   [consumer]
   (state/set-consumer-status! consumer false)
   (.close consumer)
-  (swap! state/consumers dissoc consumer)
+  (state/drop-consumer! consumer)
   (info "Closed Kafka Consumer"))
 
 (defn start-consumer!
@@ -70,7 +70,7 @@
   (let [topic-config    (topic-config topic)
         consumer-config (consumer-config topic)
         consumer        (jc/subscribed-consumer consumer-config [topic-config])]
-    (swap! state/topics assoc topic consumer)
+    (state/add-topic! topic consumer)
     (state/set-consumer-status! consumer true)
     (add-shutdown-hook-consumer! consumer)
     (start-consumer! consumer topic processing-fn)))
@@ -84,8 +84,7 @@
     (info "Message:" msg)
     (when (utils/match-by-patterns msg patterns)
       (info "Adding message: " {:topic topic :msg msg})
-      (swap! state/messages conj {:topic topic
-                                  :msg msg}))))
+      (state/add-to-messages! topic msg))))
 
 (defn start-consumer-thread! [topic]
   (-> (Thread. #(process-messages! topic process-records))

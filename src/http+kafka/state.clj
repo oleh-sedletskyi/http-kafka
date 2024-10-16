@@ -20,6 +20,9 @@
 (defn drop-consumer! [consumer]
   (swap! consumers dissoc consumer))
 
+(defn add-topic! [topic consumer]
+  (swap! topics assoc topic consumer))
+
 (defn get-topics []
   (->> @filters vals (map :topic)))
 
@@ -32,22 +35,6 @@
 (defn get-filters []
   (->> @filters
        vals))
-
-(defn filter-exists? [f]
-  (->> (get-filters)
-       (filter #(and (= (:topic f) (:topic %))
-                     (= (:q f) (:q %))))
-       first
-       boolean))
-
-#_(defn add-to-filters! [f]
-    (swap! filters (fn [fs]
-
-                   ;; Generate id inside swap! to avoid race condition
-                     (let [id (if (= fs {})
-                                0
-                                (->> fs keys sort last inc))]
-                       (assoc fs id (assoc f :id id))))))
 
 (defn add-to-filters! [f]
   (swap! filters (fn [fs]
@@ -67,13 +54,9 @@
 (defn get-messages []
   @messages)
 
+(defn add-to-messages! [topic msg]
+  (swap! messages conj {:topic topic
+                        :msg msg}))
+
 (defn remove-messages-by-topic! [topic]
   (swap! messages #(remove (fn [m] (= (:topic m) topic)) %)))
-
-#_(comment
-    (add-to-filters! {:topic "top2"
-                      :q "q"})
-    (reset! filters {})
-    @filters
-  ;
-    )
